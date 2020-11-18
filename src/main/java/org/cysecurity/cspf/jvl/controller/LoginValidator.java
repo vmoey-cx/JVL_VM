@@ -18,7 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.cysecurity.cspf.jvl.model.DBConnect;
- 
+import java.sql.PreparedStatement; 
  
 
 /**
@@ -48,14 +48,23 @@ public class LoginValidator extends HttpServlet {
                     if(con!=null && !con.isClosed())
                                {
                                    ResultSet rs=null;
-                                   Statement stmt = con.createStatement();  
-                                   rs=stmt.executeQuery("select * from users where username='"+user+"' and password='"+pass+"'");
+                                   String sql = "select * from users where username=? and password=?"; 
+                                   PreparedStatement preparedStatement = con.prepareStatement(sql);
+                                   preparedStatement.setString(1,user);
+                                   preparedStatement.setString(2,pass);
+                                   rs = preparedStatement.executeQuery();
+                               
                                    if(rs != null && rs.next()){
-                                   HttpSession session=request.getSession();
-                                   session.setAttribute("isLoggedIn", "1");
-                                   session.setAttribute("userid", rs.getString("id"));
-                                   session.setAttribute("user", rs.getString("username"));
-                                   session.setAttribute("avatar", rs.getString("avatar"));
+                                       HttpSession session=request.getSession();
+                                                                      
+                                       String id = StringEscapeUtils.escapeHtml4(rs.getString("id"));
+                                       String dbusername = StringEscapeUtils.escapeHtml4(rs.getString("username"));
+                                       String avatar = StringEscapeUtils.escapeHtml4(rs.getString("avatar"));
+                                       session.setAttribute("isLoggedIn", "1");
+                                       session.setAttribute("userid", id);
+                                       session.setAttribute("user", dbusername);
+                                       session.setAttribute("avatar", avatar);
+                               
                                    Cookie privilege=new Cookie("privilege","user");
                                    response.addCookie(privilege);
                                    if(request.getParameter("RememberMe")!=null)
